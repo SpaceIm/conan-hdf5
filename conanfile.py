@@ -1,3 +1,4 @@
+import glob
 import os
 
 from conans import ConanFile, CMake, tools
@@ -10,7 +11,7 @@ class Hdf5Conan(ConanFile):
     topics = ("conan", "hdf5", "hdf", "data")
     homepage = "https://portal.hdfgroup.org/display/HDF5/HDF5"
     url = "https://github.com/conan-io/conan-center-index"
-    exports_sources = "CMakeLists.txt"
+    exports_sources = ["CMakeLists.txt", "patches/**"]
     generators = "cmake"
     settings = "os", "arch", "compiler", "build_type"
     options = {
@@ -50,7 +51,7 @@ class Hdf5Conan(ConanFile):
         elif self.options.szip_support == "with_szip" and \
              self.options.szip_encoding and \
              not self.options["szip"].enable_encoding:
-            raise ConanInvalidConfiguration("encoding must be enabled in the dependency (szip:enable_encoding=True)")
+            raise ConanInvalidConfiguration("encoding must be enabled in szip dependency (szip:enable_encoding=True)")
 
     def requirements(self):
         if self.options.with_zlib:
@@ -66,10 +67,15 @@ class Hdf5Conan(ConanFile):
         os.rename(extracted_dir, self._source_subfolder)
 
     def build(self):
+        self._patch_sources()
         cmake = self._configure_cmake()
         cmake.build()
 
-    def patch_sources(self):
+    def _patch_sources(self):
+        if "patches" in self.conan_data and self.version in self.conan_data["patches"]:
+            for patch in self.conan_data["patches"][self.version]:
+                tools.patch(**patch)
+        # Do not force PIC
         tools.replace_in_file(os.path.join(self._source_subfolder, "CMakeLists.txt"),
                               "set (CMAKE_POSITION_INDEPENDENT_CODE ON)", "")
 
@@ -94,7 +100,8 @@ class Hdf5Conan(ConanFile):
         self._cmake.definitions["HDF5_ENABLE_DEPRECATED_SYMBOLS"] = True
         self._cmake.definitions["HDF5_BUILD_GENERATORS"] = False
         self._cmake.definitions["HDF5_ENABLE_TRACE"] = False
-        self._cmake.definitions["HDF5_ENABLE_INSTRUMENT"] = False # Debug mode
+        if self.settings.build_type == "Debug":
+            self._cmake.definitions["HDF5_ENABLE_INSTRUMENT"] = False  # Option?
         self._cmake.definitions["HDF5_ENABLE_PARALLEL"] = False
         self._cmake.definitions["HDF5_ENABLE_Z_LIB_SUPPORT"] = self.options.with_zlib
         self._cmake.definitions["HDF5_ENABLE_SZIP_SUPPORT"] = bool(self.options.szip_support)
@@ -108,7 +115,7 @@ class Hdf5Conan(ConanFile):
         self._cmake.definitions["HDF5_BUILD_EXAMPLES"] = False
         self._cmake.definitions["HDF5_BUILD_HL_LIB"] = self.options.hl
         self._cmake.definitions["HDF5_BUILD_FORTRAN"] = False
-        self._cmake.definitions["HDF5_BUILD_CPP_LIB"] = True
+        self._cmake.definitions["HDF5_BUILD_CPP_LIB"] = True # Option?
         if tools.Version(self.version) >= "1.10.0":
             self._cmake.definitions["HDF5_BUILD_JAVA"] = False
         self._cmake.configure(build_folder=self._build_subfolder)
@@ -119,7 +126,15 @@ class Hdf5Conan(ConanFile):
         cmake = self._configure_cmake()
         cmake.install()
         tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
-        os.remove(os.path.join(self.package_folder, "lib", "libhdf4.settings"))
+        os.remove(os.path.join(self.package_folder, "lib", "libhdf5.settings"))
+        if tools.Version(self.version) < "1.10.6" and self.options.shared:
+            self._remove_static_libs()
+
+    def _remove_static_libs(self):
+        wildcard_pattern = os.path.join(self.package_folder, "lib", "lib*")
+        for extension in [".a", ".lib"]:
+            for static_lib in glob.glob(wildcard_pattern + extension):
+                os.remove(static_lib)
 
     def package_info(self):
         self.cpp_info.names["cmake_find_package"] = "HDF5"
@@ -128,7 +143,7 @@ class Hdf5Conan(ConanFile):
         self.cpp_info.includedirs.append(os.path.join(self.package_folder, "include", "hdf5"))
         if self.options.shared:
             self.cpp_info.defines.append("H5_BUILT_AS_DYNAMIC_LIB")
-        if self.settings.os == "Linux" and not self.options.shared:
+        if self.settings.os == "Linux":
             self.cpp_info.system_libs.extend(["dl", "m"])
 
     def _get_ordered_libs(self):
