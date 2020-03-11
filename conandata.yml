@@ -1,0 +1,4 @@
+sources:
+  "1.8.21":
+    url: "https://github.com/live-clones/hdf5/archive/hdf5-1_8_21.tar.gz"
+    sha256: "753520e34a576a64809b8e02d9c015d6126f7974f678c7417a60492d835a88f4"
