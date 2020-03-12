@@ -27,8 +27,8 @@ class Hdf5Conan(ConanFile):
         "fPIC": True,
         "hl": True,
         "with_zlib": True,
-        "szip_support": None,
-        "szip_encoding": False
+        "szip_support": "with_libaec",
+        "szip_encoding": True
     }
 
     _cmake = None
@@ -105,6 +105,7 @@ class Hdf5Conan(ConanFile):
         self._cmake.definitions["HDF5_ENABLE_PARALLEL"] = False
         self._cmake.definitions["HDF5_ENABLE_Z_LIB_SUPPORT"] = self.options.with_zlib
         self._cmake.definitions["HDF5_ENABLE_SZIP_SUPPORT"] = bool(self.options.szip_support)
+        self._cmake.definitions["CONAN_SZIP_LIBNAME"] = self._get_szip_lib()
         self._cmake.definitions["HDF5_ENABLE_SZIP_ENCODING"] = self.options.get_safe("szip_encoding") or False
         self._cmake.definitions["HDF5_PACKAGE_EXTLIBS"] = False
         self._cmake.definitions["HDF5_ENABLE_THREADSAFE"] = False # Option?
@@ -120,6 +121,12 @@ class Hdf5Conan(ConanFile):
             self._cmake.definitions["HDF5_BUILD_JAVA"] = False
         self._cmake.configure(build_folder=self._build_subfolder)
         return self._cmake
+
+    def _get_szip_lib(self):
+        return {
+            "with_libaec": "libaec",
+            "with_szip": "szip"
+        }.get(self.options.szip_support)
 
     def package(self):
         self.copy("COPYING", dst="licenses", src=self._source_subfolder)
