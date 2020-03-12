@@ -6,5 +6,7 @@ patches:
   "1.8.21":
     - patch_file: "patches/conanize-link-szip-1.8.21.patch"
       base_path: "source_subfolder"
+    - patch_file: "patches/build-either-static-or-shared-1.8.21.patch"
+      base_path: "source_subfolder"
     - patch_file: "patches/fix-prefix-lib-mingw.patch"
       base_path: "source_subfolder"

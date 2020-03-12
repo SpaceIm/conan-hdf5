@@ -27,7 +27,7 @@ class Hdf5Conan(ConanFile):
         "fPIC": True,
         "hl": True,
         "with_zlib": True,
-        "szip_support": "with_szip",
+        "szip_support": None,
         "szip_encoding": False
     }
 
@@ -134,14 +134,6 @@ class Hdf5Conan(ConanFile):
         cmake.install()
         tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
         os.remove(os.path.join(self.package_folder, "lib", "libhdf5.settings"))
-        if tools.Version(self.version) < "1.10.6" and self.options.shared:
-            self._remove_static_libs()
-
-    def _remove_static_libs(self):
-        wildcard_pattern = os.path.join(self.package_folder, "lib", "lib*")
-        for extension in [".a", ".lib"]:
-            for static_lib in glob.glob(wildcard_pattern + extension):
-                os.remove(static_lib)
 
     def package_info(self):
         self.cpp_info.names["cmake_find_package"] = "HDF5"
@@ -154,9 +146,9 @@ class Hdf5Conan(ConanFile):
             self.cpp_info.system_libs.extend(["dl", "m"])
 
     def _get_ordered_libs(self):
+        libs = ["hdf5_cpp", "hdf5"]
         if self.options.hl:
-            libs = ["hdf5_hl_cpp", "hdf5_hl"]
-        libs.extend(["hdf5_cpp", "hdf5"])
+            libs[:0] = ["hdf5_hl_cpp", "hdf5_hl"]
         # See config/cmake_ext_mod/HDFMacros.cmake
         if self.settings.os == "Windows" and self.settings.compiler != "gcc" and not self.options.shared:
             libs = ["lib" + lib for lib in libs]
