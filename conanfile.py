@@ -126,7 +126,7 @@ class Hdf5Conan(ConanFile):
         return {
             "with_libaec": "libaec",
             "with_szip": "szip"
-        }.get(self.options.szip_support)
+        }.get(str(self.options.szip_support))
 
     def package(self):
         self.copy("COPYING", dst="licenses", src=self._source_subfolder)
