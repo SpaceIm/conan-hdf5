@@ -27,8 +27,8 @@ class Hdf5Conan(ConanFile):
         "fPIC": True,
         "hl": True,
         "with_zlib": True,
-        "szip_support": "with_libaec",
-        "szip_encoding": True
+        "szip_support": "with_szip",
+        "szip_encoding": False
     }
 
     _cmake = None
