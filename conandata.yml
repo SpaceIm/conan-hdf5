@@ -13,6 +13,8 @@ patches:
       base_path: "source_subfolder"
     - patch_file: "patches/fix-prefix-lib-mingw.patch"
       base_path: "source_subfolder"
+    - patch_file: "patches/mingw-unused-ellipses.patch"
+      base_path: "source_subfolder"
   "1.8.21":
     - patch_file: "patches/conanize-link-szip-1.8.21.patch"
       base_path: "source_subfolder"
