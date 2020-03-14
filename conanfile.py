@@ -143,6 +143,9 @@ class Hdf5Conan(ConanFile):
         cmake.install()
         tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
         os.remove(os.path.join(self.package_folder, "lib", "libhdf5.settings"))
+        # Remove h5cc, h5c++, h5hlcc and h5hlc++ shell scripts in bin folder
+        if self.settings.os != "Windows":
+            tools.rmdir(os.path.join(self.package_folder, "bin"))
 
     def package_info(self):
         self.cpp_info.names["cmake_find_package"] = "HDF5"
