@@ -80,9 +80,8 @@ class Hdf5Conan(ConanFile):
         cmake.build()
 
     def _patch_sources(self):
-        if "patches" in self.conan_data and self.version in self.conan_data["patches"]:
-            for patch in self.conan_data["patches"][self.version]:
-                tools.patch(**patch)
+        for patch in self.conan_data.get("patches", {}).get(self.version, []):
+            tools.patch(**patch)
         # Do not force PIC
         tools.replace_in_file(os.path.join(self._source_subfolder, "CMakeLists.txt"),
                               "set (CMAKE_POSITION_INDEPENDENT_CODE ON)", "")
@@ -150,6 +149,7 @@ class Hdf5Conan(ConanFile):
     def package_info(self):
         self.cpp_info.names["cmake_find_package"] = "HDF5"
         self.cpp_info.names["cmake_find_package_multi"] = "HDF5"
+        self.cpp_info.names["pkg_config"] = "hdf5"
         self.cpp_info.libs = self._get_ordered_libs()
         self.cpp_info.includedirs.append(os.path.join(self.package_folder, "include", "hdf5"))
         if self.options.shared:
